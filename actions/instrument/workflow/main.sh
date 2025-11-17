@@ -203,6 +203,7 @@ jq < "$jobs_json" -r --unbuffered '. | ["'"$TRACEPARENT"'", .id, .conclusion, .s
   if [ -n "$last_log_timestamp" ] && [ "$last_log_timestamp" '>' "$job_completed_at" ]; then job_completed_at="$last_log_timestamp"; fi
   
   observation_handle="$(otel_observation_create 1)"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.workflow.name="$(jq < "$workflow_json" -r .name)"
   otel_observation_attribute_typed "$observation_handle" int github.actions.workflow_run.attempt="$(jq < "$workflow_json" .run_attempt)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.workflow_run.conclusion="$(jq < "$workflow_json" -r .conclusion)"
@@ -211,11 +212,13 @@ jq < "$jobs_json" -r --unbuffered '. | ["'"$TRACEPARENT"'", .id, .conclusion, .s
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.name="$(jq < "$workflow_json" -r .event)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref="/refs/heads/$(jq < "$workflow_json" -r .head_branch)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref.name="$(jq < "$workflow_json" -r .head_branch)"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.job.id="$job_id"
   otel_observation_attribute_typed "$observation_handle" string github.actions.job.name="$job_name"
   otel_observation_attribute_typed "$observation_handle" string github.actions.job.conclusion="$job_conclusion"
   otel_counter_observe "$job_run_counter_handle" "$observation_handle"
   
   observation_handle="$(otel_observation_create "$(python3 -c "print(str(max(0, $(date -d "$job_completed_at" '+%s.%N') - $(date -d "$job_started_at" '+%s.%N'))))")")"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.workflow.name="$(jq < "$workflow_json" -r .name)"
   otel_observation_attribute_typed "$observation_handle" int github.actions.workflow_run.attempt="$(jq < "$workflow_json" .run_attempt)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.workflow_run.conclusion="$(jq < "$workflow_json" -r .conclusion)"
@@ -224,6 +227,7 @@ jq < "$jobs_json" -r --unbuffered '. | ["'"$TRACEPARENT"'", .id, .conclusion, .s
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.name="$(jq < "$workflow_json" -r .event)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref="/refs/heads/$(jq < "$workflow_json" -r .head_branch)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref.name="$(jq < "$workflow_json" -r .head_branch)"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.job.id="$job_id"
   otel_observation_attribute_typed "$observation_handle" string github.actions.job.name="$job_name"
   otel_observation_attribute_typed "$observation_handle" string github.actions.job.conclusion="$job_conclusion"
   otel_counter_observe "$job_duration_counter_handle" "$observation_handle"
@@ -231,6 +235,7 @@ jq < "$jobs_json" -r --unbuffered '. | ["'"$TRACEPARENT"'", .id, .conclusion, .s
   job_span_handle="$(otel_span_start @"$job_started_at" CONSUMER "$job_name")"
   otel_span_attribute_typed "$job_span_handle" string github.actions.type=job
   otel_span_attribute_typed "$job_span_handle" string github.actions.url="$link"/job/"$job_id"
+  otel_span_attribute_typed "$job_span_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
   otel_span_attribute_typed "$job_span_handle" int github.actions.job.id="$job_id"
   otel_span_attribute_typed "$job_span_handle" string github.actions.job.name="$job_name"
   otel_span_attribute_typed "$job_span_handle" string github.actions.job.conclusion="$job_conclusion"
@@ -278,6 +283,7 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
   fi
   
   observation_handle="$(otel_observation_create 1)"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.workflow.name="$(jq < "$workflow_json" -r .name)"
   otel_observation_attribute_typed "$observation_handle" int github.actions.workflow_run.attempt="$(jq < "$workflow_json" .run_attempt)"
   otel_observation_attribute_typed "$observation_handle" int github.actions.actor.id="$(jq < "$workflow_json" .actor.id)"
@@ -285,12 +291,15 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.name="$(jq < "$workflow_json" -r .event)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref="/refs/heads/$(jq < "$workflow_json" -r .head_branch)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref.name="$(jq < "$workflow_json" -r .head_branch)"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.job.id="$job_id"
   otel_observation_attribute_typed "$observation_handle" string github.actions.job.name="$job_name"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.step.number="$step_number"
   otel_observation_attribute_typed "$observation_handle" string github.actions.step.name="$step_name"
   otel_observation_attribute_typed "$observation_handle" string github.actions.step.conclusion="$step_conclusion"
   otel_counter_observe "$step_run_counter_handle" "$observation_handle"
   
   observation_handle="$(otel_observation_create "$(python3 -c "print(str(max(0, $(date -d "$step_completed_at" '+%s.%N') - $(date -d "$step_started_at" '+%s.%N'))))")")"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.workflow.name="$(jq < "$workflow_json" -r .name)"
   otel_observation_attribute_typed "$observation_handle" int github.actions.workflow_run.attempt="$(jq < "$workflow_json" .run_attempt)"
   otel_observation_attribute_typed "$observation_handle" int github.actions.actor.id="$(jq < "$workflow_json" .actor.id)"
@@ -298,13 +307,16 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.name="$(jq < "$workflow_json" -r .event)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref="/refs/heads/$(jq < "$workflow_json" -r .head_branch)"
   otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref.name="$(jq < "$workflow_json" -r .head_branch)"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.job.id="$job_id"
   otel_observation_attribute_typed "$observation_handle" string github.actions.job.name="$job_name"
+  otel_observation_attribute_typed "$observation_handle" int github.actions.step.number="$step_number"
   otel_observation_attribute_typed "$observation_handle" string github.actions.step.name="$step_name"
   otel_observation_attribute_typed "$observation_handle" string github.actions.step.conclusion="$step_conclusion"
   otel_counter_observe "$step_duration_counter_handle" "$observation_handle"
 
   if [ -n "${action_name:-}" ]; then
     observation_handle="$(otel_observation_create 1)"
+    otel_observation_attribute_typed "$observation_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
     otel_observation_attribute_typed "$observation_handle" string github.actions.workflow.name="$(jq < "$workflow_json" -r .name)"
     otel_observation_attribute_typed "$observation_handle" int github.actions.workflow_run.attempt="$(jq < "$workflow_json" .run_attempt)"
     otel_observation_attribute_typed "$observation_handle" int github.actions.actor.id="$(jq < "$workflow_json" .actor.id)"
@@ -312,7 +324,9 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
     otel_observation_attribute_typed "$observation_handle" string github.actions.event.name="$(jq < "$workflow_json" -r .event)"
     otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref="/refs/heads/$(jq < "$workflow_json" -r .head_branch)"
     otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref.name="$(jq < "$workflow_json" -r .head_branch)"
+    otel_observation_attribute_typed "$observation_handle" int github.actions.job.id="$job_id"
     otel_observation_attribute_typed "$observation_handle" string github.actions.job.name="$job_name"
+    otel_observation_attribute_typed "$observation_handle" int github.actions.step.number="$step_number"
     otel_observation_attribute_typed "$observation_handle" string github.actions.step.name="$step_name"
     otel_observation_attribute_typed "$observation_handle" string github.actions.action.name="$action_name"
     otel_observation_attribute_typed "$observation_handle" string github.actions.action.ref="$action_tag"
@@ -320,6 +334,7 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
     otel_counter_observe "$action_run_counter_handle" "$observation_handle"
     
     observation_handle="$(otel_observation_create "$(python3 -c "print(str(max(0, $(date -d "$step_completed_at" '+%s.%N') - $(date -d "$step_started_at" '+%s.%N'))))")")"
+    otel_observation_attribute_typed "$observation_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
     otel_observation_attribute_typed "$observation_handle" string github.actions.workflow.name="$(jq < "$workflow_json" -r .name)"
     otel_observation_attribute_typed "$observation_handle" int github.actions.workflow_run.attempt="$(jq < "$workflow_json" .run_attempt)"
     otel_observation_attribute_typed "$observation_handle" int github.actions.actor.id="$(jq < "$workflow_json" .actor.id)"
@@ -327,7 +342,9 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
     otel_observation_attribute_typed "$observation_handle" string github.actions.event.name="$(jq < "$workflow_json" -r .event)"
     otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref="/refs/heads/$(jq < "$workflow_json" -r .head_branch)"
     otel_observation_attribute_typed "$observation_handle" string github.actions.event.ref.name="$(jq < "$workflow_json" -r .head_branch)"
+    otel_observation_attribute_typed "$observation_handle" int github.actions.job.id="$job_id"
     otel_observation_attribute_typed "$observation_handle" string github.actions.job.name="$job_name"
+    otel_observation_attribute_typed "$observation_handle" int github.actions.step.number="$step_number"
     otel_observation_attribute_typed "$observation_handle" string github.actions.step.name="$step_name"
     otel_observation_attribute_typed "$observation_handle" string github.actions.action.name="$action_name"
     otel_observation_attribute_typed "$observation_handle" string github.actions.action.ref="$action_tag"
@@ -338,6 +355,9 @@ done | sed 's/\t/ /g' | while read -r TRACEPARENT job_id step_number step_conclu
   step_span_handle="$(otel_span_start @"$step_started_at" INTERNAL "$step_name")"
   otel_span_attribute_typed "$step_span_handle" string github.actions.type=step
   otel_span_attribute_typed "$step_span_handle" string github.actions.url="$link"/job/"$job_id"'#'step:"$step_number":1
+  otel_span_attribute_typed "$step_span_handle" int github.actions.workflow.id="$(jq < "$workflow_json" -r .workflow_id)"
+  otel_span_attribute_typed "$step_span_handle" int github.actions.job.id="$job_id"
+  otel_span_attribute_typed "$step_span_handle" int github.actions.step.number="$step_number"
   otel_span_attribute_typed "$step_span_handle" string github.actions.step.name="$step_name"
   otel_span_attribute_typed "$step_span_handle" string github.actions.action.name="${action_name:-}"
   otel_span_attribute_typed "$step_span_handle" string github.actions.action.ref="${action_tag:-}"
